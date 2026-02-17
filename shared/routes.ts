@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertTournamentSchema, tournaments, tournamentStatusEnum } from './schema';
+import { insertTournamentSchema, insertTeamMemberSchema, tournaments, teamMembers, tournamentStatusEnum } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -68,6 +68,34 @@ export const api = {
       },
     },
   },
+  team: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/team' as const,
+      responses: {
+        200: z.array(z.custom<typeof teamMembers.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/team' as const,
+      input: insertTeamMemberSchema,
+      responses: {
+        201: z.custom<typeof teamMembers.$inferSelect>(),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/team/:id' as const,
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+        401: errorSchemas.unauthorized,
+      },
+    },
+  }
 };
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {
@@ -84,3 +112,4 @@ export function buildUrl(path: string, params?: Record<string, string | number>)
 
 export type TournamentInput = z.infer<typeof api.tournaments.create.input>;
 export type TournamentUpdateInput = z.infer<typeof api.tournaments.update.input>;
+export type TeamMemberInput = z.infer<typeof api.team.create.input>;

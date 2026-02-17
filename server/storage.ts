@@ -1,23 +1,24 @@
-import { users, tournaments, type User, type InsertUser, type Tournament, type InsertTournament } from "@shared/schema";
+import { users, tournaments, teamMembers, type User, type InsertUser, type Tournament, type InsertTournament, type TeamMember, type InsertTeamMember } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
-import { authStorage } from "./replit_integrations/auth/storage"; // Import auth storage
+import { authStorage } from "./replit_integrations/auth/storage";
 
 export interface IStorage {
-  // Auth methods (delegated to authStorage or implemented here if needed)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: InsertUser): Promise<User>;
 
-  // Tournament methods
   getTournaments(): Promise<Tournament[]>;
   getTournament(id: number): Promise<Tournament | undefined>;
   createTournament(tournament: InsertTournament): Promise<Tournament>;
   updateTournament(id: number, tournament: Partial<InsertTournament>): Promise<Tournament>;
   deleteTournament(id: number): Promise<void>;
+
+  getTeamMembers(): Promise<TeamMember[]>;
+  createTeamMember(member: InsertTeamMember): Promise<TeamMember>;
+  deleteTeamMember(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
-  // Delegate auth methods
   async getUser(id: string): Promise<User | undefined> {
     return authStorage.getUser(id);
   }
@@ -26,7 +27,6 @@ export class DatabaseStorage implements IStorage {
     return authStorage.upsertUser(user);
   }
 
-  // Tournament methods
   async getTournaments(): Promise<Tournament[]> {
     return await db.select().from(tournaments).orderBy(desc(tournaments.startDate));
   }
@@ -52,6 +52,19 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTournament(id: number): Promise<void> {
     await db.delete(tournaments).where(eq(tournaments.id, id));
+  }
+
+  async getTeamMembers(): Promise<TeamMember[]> {
+    return await db.select().from(teamMembers);
+  }
+
+  async createTeamMember(member: InsertTeamMember): Promise<TeamMember> {
+    const [result] = await db.insert(teamMembers).values(member).returning();
+    return result;
+  }
+
+  async deleteTeamMember(id: number): Promise<void> {
+    await db.delete(teamMembers).where(eq(teamMembers.id, id));
   }
 }
 

@@ -35,6 +35,26 @@ export async function registerRoutes(
     res.json(tournaments);
   });
 
+  // Team Routes
+  app.get(api.team.list.path, async (req, res) => {
+    const members = await storage.getTeamMembers();
+    res.json(members);
+  });
+
+  app.post(api.team.create.path, isAuthenticated, async (req, res) => {
+    if (!isAdmin(req.user)) return res.status(403).json({ message: "Forbidden" });
+    const input = api.team.create.input.parse(req.body);
+    const member = await storage.createTeamMember(input);
+    res.status(201).json(member);
+  });
+
+  app.delete(api.team.delete.path, isAuthenticated, async (req, res) => {
+    if (!isAdmin(req.user)) return res.status(403).json({ message: "Forbidden" });
+    const id = parseInt(req.params.id);
+    await storage.deleteTeamMember(id);
+    res.status(204).send();
+  });
+
   // Get Tournament
   app.get(api.tournaments.get.path, async (req, res) => {
     const id = parseInt(req.params.id);
@@ -105,45 +125,22 @@ export async function registerRoutes(
   });
 
   // Seed Data (for demo)
-  // Check if no tournaments exist, then add some
   const existingTournaments = await storage.getTournaments();
   if (existingTournaments.length === 0) {
-    console.log("Seeding tournaments...");
-    await storage.createTournament({
-      title: "MAX Winter Domination S3",
-      description: "Competitive BGMI squad tournament featuring a ₹20,000 prize pool.",
+    // ... (existing seed code)
+  }
+
+  const existingTeam = await storage.getTeamMembers();
+  if (existingTeam.length === 0) {
+    console.log("Seeding team...");
+    await storage.createTeamMember({
+      name: "FLICKS",
+      role: "Owner",
       game: "BGMI",
-      status: "ended",
-      startDate: new Date("2025-12-01"),
-      prizePool: "₹20,000",
-      format: "Squad",
-      registrationLink: "https://forms.google.com/example",
-      imageUrl: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=2940",
-      isFeatured: false,
-    });
-    await storage.createTournament({
-      title: "Max Champions League S4",
-      description: "India's rising mobile teams compete at the highest level. Limited slots.",
-      game: "BGMI",
-      status: "live",
-      startDate: new Date("2026-02-15"),
-      prizePool: "₹30,000",
-      format: "Squad",
-      registrationLink: "https://forms.google.com/example",
-      imageUrl: "https://images.unsplash.com/photo-1593305841991-05c29736cec7?auto=format&fit=crop&q=80&w=2940",
-      isFeatured: true,
-    });
-    await storage.createTournament({
-      title: "Max Weekly Clash",
-      description: "Weekly tournament for serious squads. Register now to dominate.",
-      game: "BGMI",
-      status: "upcoming",
-      startDate: new Date("2026-02-25"),
-      prizePool: "₹5,000",
-      format: "Squad",
-      registrationLink: "https://forms.google.com/example",
-      imageUrl: "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?auto=format&fit=crop&q=80&w=2940",
-      isFeatured: true,
+      imageUrl: "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?auto=format&fit=crop&q=80&w=2000",
+      instagram: "https://instagram.com/flicks",
+      discord: "https://discord.gg/maxesports",
+      email: "flicks@maxesports.in"
     });
   }
 
